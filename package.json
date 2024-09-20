@@ -1,0 +1,30 @@
+{
+  "name": "renovi-utils",
+  "version": "0.0.12",
+  "description": "Renovi utility functions",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "homepage": "renovi.io",
+  "repository": {
+    "url": "https://github.com/digital-lumenspei/renovi-web-sdk"
+  },
+  "scripts": {
+    "build": "tsup",
+    "start": "tsup & node ./dist/index.js"
+  },
+  "keywords": [
+    "test"
+  ],
+  "author": "veljkovic92",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/device-uuid": "^1.0.3",
+    "tsup": "^8.2.4",
+    "typescript": "^5.6.2"
+  },
+  "dependencies": {
+    "device-uuid": "^1.0.4",
+    "ts-node": "^10.9.2"
+  }
+}
