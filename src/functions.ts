@@ -5,11 +5,11 @@ import {
   IPrebidAds,
   IResponseData,
 } from "./types";
-import config from "../renovi.config.js";
 import { DeviceUUID } from "device-uuid";
 
-const baseUrl: string = "https://api.dev.nexa.lumenspei.xyz/renovi";
-let deviceId: string = "474747";
+let config: IConfig;
+let baseUrl: string = "https://api.dev.nexa.lumenspei.xyz/renovi";
+let deviceId: string = "";
 let sessionId: string;
 let ip: string;
 let locationData: Partial<IImpression>;
@@ -62,13 +62,13 @@ const getLocationDataFromIP = async (
 };
 
 const login = async (): Promise<string> => {
-  const uuid = new DeviceUUID().get();
+  const id = new DeviceUUID().get();
 
   try {
     const fetchBody: IPlayer = {
-      deviceId: uuid,
+      deviceId: id,
       gameId: config.gameId,
-      country: "OTHER",
+      country: locationData.country || "OTHER",
     };
     const response = await fetch(`${baseUrl}/v1/active-players/create`, {
       method: "POST",
@@ -84,6 +84,7 @@ const login = async (): Promise<string> => {
       console.error(await response.json());
       throw new Error("Failed to login");
     }
+    deviceId = id;
     return ((await response.json()) as IResponseData).data;
   } catch (error) {
     console.error(error);
@@ -91,20 +92,23 @@ const login = async (): Promise<string> => {
   }
 };
 
-const setup = async (config: IConfig): Promise<boolean> => {
+const setup = async (): Promise<boolean> => {
   try {
     const configErrors: string[] = validateConfig(config);
     if (configErrors.length > 0) {
       throw new Error(configErrors.join(", "));
     }
-    sessionId = await login();
-    if (sessionId === "") {
-      console.error("Nesto ovde smrducka!");
+    if (config.prod) {
+      baseUrl = "https://api.renovi.io/renovi";
     }
-    const campaigns: IPrebidAds[] = await getCampaigns();
+
     ip = await getIp();
     locationData = await getLocationDataFromIP(ip);
-    await view(campaigns[0].panelName, campaigns[0].campaigns[0].viewUrl);
+    sessionId = await login();
+
+    if (sessionId === "") {
+      console.error("session id is required");
+    }
 
     return Promise.resolve(true);
   } catch (error) {
@@ -112,7 +116,7 @@ const setup = async (config: IConfig): Promise<boolean> => {
   }
 };
 
-export const getCampaigns = async (): Promise<IPrebidAds[]> => {
+export const getCampaigns = async (): Promise<{ [key: string]: string }> => {
   try {
     const panelsString: string =
       config.panelNames.length > 0
@@ -131,7 +135,40 @@ export const getCampaigns = async (): Promise<IPrebidAds[]> => {
       throw new Error("Failed to fetch ads...");
     }
     const responseData: IResponseData = await response.json();
-    return Promise.resolve(responseData.data);
+    const campaignsData: IPrebidAds[] = responseData.data;
+
+    const result: { [key: string]: string } = {};
+
+    campaignsData.forEach((campaign) => {
+      let html = `<div class="renovi-container" id="container-${campaign.panelName}" data-panel-name="${campaign.panelName}" data-view-url="${campaign.campaigns[0].viewUrl}">`;
+      if (campaign.campaigns.length > 1) {
+        html += `
+          <div class="renovi-slider" id="slider-${campaign.panelName}">
+            ${campaign.campaigns
+              .map(
+                (c, index) => `
+              <div class="slide ${index === 0 ? "active" : ""}" id="slide-${
+                  c.slide.id
+                }">
+                <img src="${c.imagePath}" alt="Campaign Image">
+              </div>
+            `
+              )
+              .join("")}
+          </div>
+        `;
+      } else {
+        html += `
+          <div class="campaign-single">
+            <img src="${campaign.campaigns[0].imagePath}" alt="Campaign Image">
+          </div>
+        `;
+      }
+      html += "</div>";
+      result[campaign.panelName] = html;
+    });
+
+    return Promise.resolve(result);
   } catch (error) {
     return Promise.reject(error);
   }
@@ -172,8 +209,107 @@ export const view = async (
   }
 };
 
-export const init = async (config: IConfig): Promise<boolean> => {
-  const setupResolved = await setup(config);
+export const init = async (cfg: IConfig): Promise<boolean> => {
+  config = cfg;
+  const setupSuccessful = await setup();
 
-  return setupResolved;
+  if (setupSuccessful) {
+    document.addEventListener("campaignInView", function (event) {
+      const customEvent = event as CustomEvent<{
+        panelName: string;
+        viewUrl: string;
+      }>;
+      const { panelName, viewUrl } = customEvent.detail;
+      view(panelName, viewUrl);
+    });
+
+    // Set up sliders and observers
+    setupSliders();
+    setupIntersectionObservers();
+    setupMutationObserver();
+  }
+  return setupSuccessful;
+};
+
+const setupSliders = () => {
+  const sliders = document.querySelectorAll(".renovi-slider");
+  sliders.forEach((slider) => {
+    setupSlider(slider as HTMLElement);
+  });
+};
+
+const setupSlider = (sliderElement: HTMLElement) => {
+  let currentIndex = 0;
+  const slides = sliderElement.querySelectorAll(".slide");
+
+  setInterval(() => {
+    slides[currentIndex].classList.remove("active");
+    currentIndex = (currentIndex + 1) % slides.length;
+    slides[currentIndex].classList.add("active");
+  }, 3000);
+};
+
+const setupIntersectionObservers = () => {
+  const containers = document.querySelectorAll(".renovi-container");
+  containers.forEach((container) => {
+    setupIntersectionObserver(container as HTMLElement);
+  });
+};
+
+const setupIntersectionObserver = (container: HTMLElement) => {
+  const options = {
+    root: null,
+    rootMargin: "0px",
+    threshold: 0.5,
+  };
+
+  const observer = new IntersectionObserver((entries, observer) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        const panelName = container.getAttribute("data-panel-name");
+        const viewUrl = container.getAttribute("data-view-url");
+
+        if (panelName && viewUrl) {
+          // Dispatch custom event
+          const event = new CustomEvent("campaignInView", {
+            detail: {
+              panelName: panelName,
+              viewUrl: viewUrl,
+            },
+          });
+          document.dispatchEvent(event);
+        }
+        observer.unobserve(container);
+      }
+    });
+  }, options);
+
+  observer.observe(container);
+};
+
+const setupMutationObserver = () => {
+  const observer = new MutationObserver((mutationsList) => {
+    for (let mutation of mutationsList) {
+      if (mutation.type === "childList") {
+        mutation.addedNodes.forEach((node) => {
+          if (node instanceof HTMLElement) {
+            if (node.classList.contains("renovi-container")) {
+              setupIntersectionObserver(node);
+            }
+
+            if (node.classList.contains("renovi-slider")) {
+              setupSlider(node);
+            } else {
+              const sliders = node.querySelectorAll(".renovi-slider");
+              sliders.forEach((slider) => {
+                setupSlider(slider as HTMLElement);
+              });
+            }
+          }
+        });
+      }
+    }
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
 };

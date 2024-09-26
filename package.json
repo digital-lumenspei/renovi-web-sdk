@@ -1,6 +1,6 @@
 {
   "name": "renovi-utils",
-  "version": "0.0.12",
+  "version": "0.0.29",
   "description": "Renovi utility functions",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

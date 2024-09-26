@@ -15,6 +15,7 @@ export interface IConfig {
   email: string;
   gameId: string;
   panelNames: string[];
+  prod?: boolean;
 }
 
 export interface IPlayer {
