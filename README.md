@@ -1,13 +1,13 @@
-# Renovi Utility Functions
+# Renovi WebSDK Functions
 
-Renovi Utility Functions is an npm package that provides a set of utility functions for interacting with the Renovi API. This package includes functions for fetching campaigns, registering impressions, and initializing the package with a configuration object.
+Renovi WebSDK functions is a npm package that provides a set of utility functions for interacting with the Renovi API. This package includes functions for fetching campaigns, registering impressions, and initializing the package with a configuration object.
 
 ## Installation
 
 To install the package, run:
 
 ```
-npm install renovi-utils
+npm install renovi-websdk
 ```
 
 ## Usage
@@ -20,6 +20,7 @@ apiKey: string;
 email: string;
 gameId: string;
 panelNames: string[];
+prod?: boolean;
 }
 ```
 
@@ -35,6 +36,7 @@ apiKey: 'your-api-key',
 email: 'your-email@example.com',
 gameId: 'your-game-id',
 panelNames: ['Panel 1', 'Panel 2'],
+prod: true //for produciotn
 };
 
 initialize(config).then(() => {
@@ -91,18 +93,9 @@ interface IConfig {
     email: string;
     gameId: string;
     panelNames: string[];
+    prod?: boolean;
 }
 ```
-
-## Development
-
-To build the package, run:
-
-`npm run build`
-
-To start the package, run:
-
-`npm run start`
 
 ## License
 

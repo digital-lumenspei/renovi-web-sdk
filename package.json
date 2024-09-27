@@ -1,6 +1,6 @@
 {
-  "name": "renovi-utils",
-  "version": "0.0.12",
+  "name": "renovi-websdk",
+  "version": "1.1.0",
   "description": "Renovi utility functions",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -16,7 +16,7 @@
   "keywords": [
     "test"
   ],
-  "author": "veljkovic92",
+  "author": "LSD",
   "license": "MIT",
   "devDependencies": {
     "@types/device-uuid": "^1.0.3",
