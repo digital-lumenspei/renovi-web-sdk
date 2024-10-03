@@ -15,7 +15,7 @@ export interface IConfig {
   email: string;
   gameId: string;
   panelNames: string[];
-  prod?:boolean;
+  prod?: boolean;
 }
 
 export interface IPlayer {
@@ -44,12 +44,44 @@ export interface IPrebidAds {
   campaigns: ICampaigns[];
 }
 
+export interface ISLide {
+  id: string;
+  duration?: number;
+  position?: number;
+  imagePath?: string;
+  backgroundColor?: string;
+}
+
 export interface ICampaigns {
   imagePath: string;
+  winUrl: string;
   viewUrl: string;
-  slide: { id: string };
+  slide: ISLide;
 }
 
 export interface IResponseData {
   data: any;
+}
+
+export interface IPrebidSlides {
+  id: string;
+  duration: number;
+  position: number;
+  imagePath: string;
+  backgroundColor: string;
+}
+
+export interface IPrebidCampaign {
+  id: string;
+  layoutEnum: string;
+  slides: IPrebidSlides[];
+}
+
+export interface IPrebidPanel {
+  panelName: string;
+  campaigns: IPrebidCampaign[];
+}
+
+export interface IPrebidResponseData {
+  data: IPrebidPanel[];
 }

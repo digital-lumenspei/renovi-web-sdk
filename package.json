@@ -1,6 +1,6 @@
 {
   "name": "renovi-websdk",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Renovi utility functions",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
